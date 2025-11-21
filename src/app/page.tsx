@@ -1,15 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import ADHDRoutineTracker from '@/components/ADHDRoutineTracker';
 import { getRandomQuote } from '@/utils/quotes';
 
 export default function Home() {
-  const [quote, setQuote] = useState({ text: '', author: '' });
-
-  useEffect(() => {
-    setQuote(getRandomQuote());
-  }, []);
+  const [quote] = useState(() => getRandomQuote());
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">

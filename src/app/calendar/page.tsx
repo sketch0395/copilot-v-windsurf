@@ -1,24 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Calendar from '@/components/Calendar';
 import { loadUsageData, getUsageStats } from '@/utils/usageTracking';
 
 export default function CalendarPage() {
-  const [activeDays, setActiveDays] = useState<Set<string>>(new Set());
-  const [stats, setStats] = useState({
-    totalDays: 0,
-    currentStreak: 0,
-    longestStreak: 0,
-    thisMonth: 0,
-    lastActive: null as string | null
-  });
-
-  useEffect(() => {
+  // Initialize state with data from localStorage
+  const [activeDays] = useState<Set<string>>(() => {
     const usageData = loadUsageData();
-    setActiveDays(new Set(usageData.activeDays));
-    setStats(getUsageStats(usageData.activeDays));
-  }, []);
+    return new Set(usageData.activeDays);
+  });
+  
+  const [stats] = useState(() => {
+    const usageData = loadUsageData();
+    return getUsageStats(usageData.activeDays);
+  });
 
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return 'Never';

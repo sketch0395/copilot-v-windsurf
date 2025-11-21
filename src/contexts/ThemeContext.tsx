@@ -12,18 +12,14 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>('dark');
-
-  useEffect(() => {
-    // Load theme from localStorage
-    const savedTheme = localStorage.getItem('adhd-tracker-theme') as Theme;
-    if (savedTheme) {
-      setThemeState(savedTheme);
-    } else {
-      // Default to dark theme
-      setThemeState('dark');
+  const [theme, setThemeState] = useState<Theme>(() => {
+    // Load theme from localStorage on initial render
+    if (typeof window !== 'undefined') {
+      const savedTheme = localStorage.getItem('adhd-tracker-theme') as Theme;
+      return savedTheme || 'dark';
     }
-  }, []);
+    return 'dark';
+  });
 
   useEffect(() => {
     // Save theme to localStorage and apply to document

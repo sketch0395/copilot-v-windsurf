@@ -166,7 +166,8 @@ interface AchievementsModalProps {
 }
 
 export function AchievementsModal({ isOpen, onClose }: AchievementsModalProps) {
-  const [data, setData] = useState<GamificationData>({
+  // Load fresh data whenever modal state is checked
+  const data = isOpen ? loadGamificationData() : {
     points: 0,
     level: 0,
     achievements: [],
@@ -174,13 +175,7 @@ export function AchievementsModal({ isOpen, onClose }: AchievementsModalProps) {
     completedSessions: 0,
     totalFocusMinutes: 0,
     pointsHistory: []
-  });
-
-  useEffect(() => {
-    if (isOpen) {
-      setData(loadGamificationData());
-    }
-  }, [isOpen]);
+  };
 
   if (!isOpen) return null;
 

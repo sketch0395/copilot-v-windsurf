@@ -29,9 +29,18 @@ export default function PointsNotification() {
 
   useEffect(() => {
     if (notifications.length > 0 && !currentNotification) {
-      setCurrentNotification(notifications[0]);
-      setNotifications(prev => prev.slice(1));
+      // Use a microtask to avoid cascading renders
+      const timeoutId = setTimeout(() => {
+        setCurrentNotification(notifications[0]);
+        setNotifications(prev => prev.slice(1));
+      }, 0);
 
+      return () => clearTimeout(timeoutId);
+    }
+  }, [notifications, currentNotification]);
+
+  useEffect(() => {
+    if (currentNotification) {
       // Auto-dismiss after 5 seconds
       const timer = setTimeout(() => {
         setCurrentNotification(null);
@@ -39,7 +48,7 @@ export default function PointsNotification() {
 
       return () => clearTimeout(timer);
     }
-  }, [notifications, currentNotification]);
+  }, [currentNotification]);
 
   if (!currentNotification) return null;
 

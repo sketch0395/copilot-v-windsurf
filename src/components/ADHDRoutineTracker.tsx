@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import FocusTimer from './FocusTimer';
 import RoutineSchedule from './RoutineSchedule';
 import ProgressIndicators from './ProgressIndicators';
@@ -86,18 +86,19 @@ const defaultRoutine: RoutineBlock[] = [
 ];
 
 export default function ADHDRoutineTracker() {
-  const [routine, setRoutine] = useState<RoutineBlock[]>(defaultRoutine);
-  const [currentBlock, setCurrentBlock] = useState<RoutineBlock | null>(null);
+  const [routine, setRoutine] = useState<RoutineBlock[]>(() => {
+    // Load routine from localStorage on component mount
+    const savedRoutine = localStorage.getItem('adhd-routine');
+    if (savedRoutine) {
+      return JSON.parse(savedRoutine);
+    }
+    return defaultRoutine;
+  });
+  
   const [isTimerActive, setIsTimerActive] = useState(false);
   const [showAchievements, setShowAchievements] = useState(false);
 
   useEffect(() => {
-    // Load routine from localStorage on component mount
-    const savedRoutine = localStorage.getItem('adhd-routine');
-    if (savedRoutine) {
-      setRoutine(JSON.parse(savedRoutine));
-    }
-    
     // Record daily usage when component mounts
     recordDailyUsage();
   }, []);
@@ -107,8 +108,8 @@ export default function ADHDRoutineTracker() {
     localStorage.setItem('adhd-routine', JSON.stringify(routine));
   }, [routine]);
 
-  useEffect(() => {
-    // Find current time block
+  // Calculate current block using useMemo to avoid cascading renders
+  const currentBlock = useMemo(() => {
     const now = new Date();
     const currentTime = now.getHours().toString().padStart(2, '0') + ':' + 
                        now.getMinutes().toString().padStart(2, '0');
@@ -117,7 +118,7 @@ export default function ADHDRoutineTracker() {
       return currentTime >= block.startTime && currentTime <= block.endTime;
     });
     
-    setCurrentBlock(current || null);
+    return current || null;
   }, [routine]);
 
   const toggleBlockCompletion = (id: string) => {
