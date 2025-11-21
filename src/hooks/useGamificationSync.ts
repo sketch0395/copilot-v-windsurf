@@ -5,7 +5,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { loadWithSync, saveWithSync } from '@/utils/cloudSync';
 import { 
   type GamificationData, 
-  calculateLevel,
   loadGamificationData as loadLocalGamification,
   saveGamificationData as saveLocalGamification
 } from '@/utils/gamification';
