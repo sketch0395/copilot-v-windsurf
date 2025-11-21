@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { loadGamificationData } from '@/utils/gamification';
+import { usePetSync } from '@/hooks/usePetSync';
 import {
   PetState,
   createNewPet,
@@ -18,16 +19,14 @@ import {
   PET_TYPES
 } from '@/utils/pet';
 
-const PET_KEY = 'adhd-tracker-pet';
-
 export default function PetPage() {
   const { user } = useAuth();
   const router = useRouter();
-  const [pet, setPet] = useState<PetState | null>(null);
   const [showAdoption, setShowAdoption] = useState(false);
   const [petName, setPetName] = useState('');
   const [selectedType, setSelectedType] = useState<PetState['type']>('cat');
   const [userLevel, setUserLevel] = useState(1);
+  const { pet, savePet, isLoading } = usePetSync(userLevel);
   const [cooldowns, setCooldowns] = useState({
     feed: false,
     play: false,
@@ -38,15 +37,6 @@ export default function PetPage() {
     if (!user) {
       router.push('/');
       return;
-    }
-
-    // Load pet from localStorage
-    const savedPet = localStorage.getItem(PET_KEY);
-    if (savedPet) {
-      const loadedPet = JSON.parse(savedPet) as PetState;
-      const updatedPet = updatePetStats(loadedPet);
-      setPet(updatedPet);
-      savePet(updatedPet);
     }
 
     // Get user level
@@ -61,22 +51,16 @@ export default function PetPage() {
     const interval = setInterval(() => {
       const updatedPet = updatePetStats(pet);
       const leveledPet = levelUpPet(updatedPet, userLevel);
-      setPet(leveledPet);
       savePet(leveledPet);
     }, 60000); // Every minute
 
     return () => clearInterval(interval);
-  }, [pet, userLevel]);
-
-  const savePet = (petData: PetState) => {
-    localStorage.setItem(PET_KEY, JSON.stringify(petData));
-  };
+  }, [pet, userLevel, savePet]);
 
   const handleAdoptPet = () => {
     if (!petName.trim()) return;
     
     const newPet = createNewPet(petName, selectedType);
-    setPet(newPet);
     savePet(newPet);
     setShowAdoption(false);
     setPetName('');
@@ -86,7 +70,6 @@ export default function PetPage() {
     if (!pet || cooldowns.feed) return;
     const updatedPet = feedPet(pet);
     if (updatedPet.lastFed !== pet.lastFed) {
-      setPet(updatedPet);
       savePet(updatedPet);
       setCooldowns({ ...cooldowns, feed: true });
       setTimeout(() => setCooldowns(prev => ({ ...prev, feed: false })), 3600000); // 1 hour
@@ -97,7 +80,6 @@ export default function PetPage() {
     if (!pet || cooldowns.play) return;
     const updatedPet = playWithPet(pet);
     if (updatedPet.lastPlayed !== pet.lastPlayed) {
-      setPet(updatedPet);
       savePet(updatedPet);
       setCooldowns({ ...cooldowns, play: true });
       setTimeout(() => setCooldowns(prev => ({ ...prev, play: false })), 7200000); // 2 hours
@@ -108,7 +90,6 @@ export default function PetPage() {
     if (!pet || cooldowns.rest) return;
     const updatedPet = restPet(pet);
     if (updatedPet.lastSlept !== pet.lastSlept) {
-      setPet(updatedPet);
       savePet(updatedPet);
       setCooldowns({ ...cooldowns, rest: true });
       setTimeout(() => setCooldowns(prev => ({ ...prev, rest: false })), 14400000); // 4 hours
@@ -117,8 +98,8 @@ export default function PetPage() {
 
   const handleRelease = () => {
     if (confirm(`Are you sure you want to release ${pet?.name}? This cannot be undone!`)) {
-      localStorage.removeItem(PET_KEY);
-      setPet(null);
+      localStorage.removeItem('adhd-tracker-pet');
+      savePet(null as any); // Clear pet data
     }
   };
 
@@ -132,6 +113,25 @@ export default function PetPage() {
   const mood = pet ? getPetMood(pet) : null;
 
   if (!user) return null;
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen">
+        <div className="container mx-auto px-4 py-8 max-w-4xl">
+          <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-6">
+            🐾 Your Focus Pet
+          </h1>
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-8 shadow-lg animate-pulse">
+            <div className="h-48 bg-gray-200 dark:bg-gray-700 rounded mb-4"></div>
+            <div className="space-y-3">
+              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">

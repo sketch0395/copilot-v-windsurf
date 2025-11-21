@@ -6,7 +6,7 @@ import RoutineSchedule from './RoutineSchedule';
 import ProgressIndicators from './ProgressIndicators';
 import GamificationWidget, { AchievementsModal } from './GamificationWidget';
 import PointsNotification from './PointsNotification';
-import { recordDailyUsage } from '@/utils/usageTracking';
+import { useUsageSync } from '@/hooks/useUsageSync';
 import { recordBlockCompletion } from '@/utils/gamification';
 import { useAuth } from '@/contexts/AuthContext';
 import { loadWithSync, saveWithSync } from '@/utils/cloudSync';
@@ -89,6 +89,7 @@ const defaultRoutine: RoutineBlock[] = [
 
 export default function ADHDRoutineTracker() {
   const { isAuthenticated } = useAuth();
+  useUsageSync(); // Record usage with cloud sync
   
   const [routine, setRoutine] = useState<RoutineBlock[]>(defaultRoutine);
   const [isTimerActive, setIsTimerActive] = useState(false);
@@ -111,11 +112,6 @@ export default function ADHDRoutineTracker() {
     }
     loadRoutine();
   }, [isAuthenticated]);
-
-  useEffect(() => {
-    // Record daily usage when component mounts
-    recordDailyUsage();
-  }, []);
 
   useEffect(() => {
     // Save routine to localStorage or cloud whenever it changes

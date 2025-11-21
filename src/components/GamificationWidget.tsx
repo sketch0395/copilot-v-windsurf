@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { 
   loadGamificationData, 
   getProgressToNextLevel, 
@@ -12,13 +12,18 @@ import {
   type GamificationData,
   type Achievement
 } from '@/utils/gamification';
+import { useGamificationSync } from '@/hooks/useGamificationSync';
 
 interface GamificationWidgetProps {
   onShowAchievements?: () => void;
 }
 
 export default function GamificationWidget({ onShowAchievements }: GamificationWidgetProps) {
-  const [data, setData] = useState<GamificationData>({
+  const { data: syncedData, isLoading } = useGamificationSync();
+  const [showDetails, setShowDetails] = useState(false);
+
+  // Use synced data or fallback to empty state
+  const data = syncedData || {
     points: 0,
     level: 0,
     achievements: [],
@@ -26,23 +31,21 @@ export default function GamificationWidget({ onShowAchievements }: GamificationW
     completedSessions: 0,
     totalFocusMinutes: 0,
     pointsHistory: []
-  });
-  const [showDetails, setShowDetails] = useState(false);
+  };
 
-  useEffect(() => {
-    const loadData = () => {
-      const gameData = loadGamificationData();
-      setData(gameData);
-    };
-    
-    loadData();
-    
-    // Listen for gamification updates
-    const handleUpdate = () => loadData();
-    window.addEventListener('gamification-update', handleUpdate);
-    
-    return () => window.removeEventListener('gamification-update', handleUpdate);
-  }, []);
+  if (isLoading) {
+    return (
+      <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-lg border-2 border-purple-200 dark:border-purple-700 animate-pulse">
+        <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded mb-3"></div>
+        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
+        <div className="grid grid-cols-3 gap-2">
+          <div className="h-16 bg-gray-200 dark:bg-gray-700 rounded"></div>
+          <div className="h-16 bg-gray-200 dark:bg-gray-700 rounded"></div>
+          <div className="h-16 bg-gray-200 dark:bg-gray-700 rounded"></div>
+        </div>
+      </div>
+    );
+  }
 
   const progress = getProgressToNextLevel(data.points, data.level);
   const nextLevelPoints = getPointsForNextLevel(data.level);

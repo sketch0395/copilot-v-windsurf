@@ -1,20 +1,53 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo } from 'react';
 import Calendar from '@/components/Calendar';
-import { loadUsageData, getUsageStats } from '@/utils/usageTracking';
+import { getUsageStats } from '@/utils/usageTracking';
+import { useUsageData } from '@/hooks/useUsageData';
 
 export default function CalendarPage() {
-  // Initialize state with data from localStorage
-  const [activeDays] = useState<Set<string>>(() => {
-    const usageData = loadUsageData();
-    return new Set(usageData.activeDays);
-  });
+  const { usageData, isLoading } = useUsageData();
   
-  const [stats] = useState(() => {
-    const usageData = loadUsageData();
+  // Compute active days and stats from usage data
+  const activeDays = useMemo(() => {
+    if (!usageData) return new Set<string>();
+    return new Set(usageData.activeDays);
+  }, [usageData]);
+  
+  const stats = useMemo(() => {
+    if (!usageData) return {
+      totalDays: 0,
+      currentStreak: 0,
+      longestStreak: 0,
+      thisMonth: 0,
+      lastActive: null
+    };
     return getUsageStats(usageData.activeDays);
-  });
+  }, [usageData]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen">
+        <div className="container mx-auto px-4 py-8">
+          <header className="text-center mb-6 sm:mb-8">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-800 dark:text-white mb-2 sm:mb-3">
+              📅 Your Progress Calendar
+            </h1>
+            <p className="text-base sm:text-lg text-gray-600 dark:text-gray-300 px-4">
+              Track your consistency and watch your streaks grow!
+            </p>
+          </header>
+          <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6 animate-pulse">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 shadow-lg h-32"></div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return 'Never';

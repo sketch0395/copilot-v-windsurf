@@ -19,17 +19,39 @@ export function useGamificationSync() {
     async function loadData() {
       try {
         if (isAuthenticated) {
-          // Load from cloud
-          const cloudData = await loadWithSync(isAuthenticated, 'gamification', null);
+          // Load both cloud and local data
+          const cloudData = await loadWithSync(isAuthenticated, 'gamification', null) as GamificationData | null;
+          const localData = loadLocalGamification();
+          
           if (cloudData) {
-            setData(cloudData as GamificationData);
-            // Update local storage as backup
-            saveLocalGamification(cloudData as GamificationData);
+            // Merge cloud and local data, preferring cloud but keeping any newer local achievements
+            const mergedData: GamificationData = {
+              ...cloudData,
+              // Merge achievements arrays, keeping unique values
+              achievements: Array.from(new Set([
+                ...(cloudData.achievements || []),
+                ...(localData.achievements || [])
+              ])),
+              // Use higher values for stats
+              points: Math.max(cloudData.points || 0, localData.points || 0),
+              level: Math.max(cloudData.level || 1, localData.level || 1),
+              completedBlocks: Math.max(cloudData.completedBlocks || 0, localData.completedBlocks || 0),
+              completedSessions: Math.max(cloudData.completedSessions || 0, localData.completedSessions || 0),
+              totalFocusMinutes: Math.max(cloudData.totalFocusMinutes || 0, localData.totalFocusMinutes || 0),
+              // Merge points history
+              pointsHistory: [
+                ...(cloudData.pointsHistory || []),
+                ...(localData.pointsHistory || [])
+              ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+            };
+            
+            setData(mergedData);
+            // Update both local and cloud with merged data
+            saveLocalGamification(mergedData);
+            await saveWithSync(isAuthenticated, 'gamification', mergedData);
           } else {
-            // No cloud data, use local
-            const localData = loadLocalGamification();
+            // No cloud data, use local and sync to cloud
             setData(localData);
-            // Sync to cloud
             await saveWithSync(isAuthenticated, 'gamification', localData);
           }
         } else {
