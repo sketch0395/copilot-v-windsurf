@@ -85,10 +85,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate dataType
-    const validTypes = ['routine', 'gamification', 'usage'];
+    const validTypes = ['routine', 'gamification', 'usage', 'pet'];
     if (!validTypes.includes(dataType)) {
       return NextResponse.json(
-        { error: 'Invalid dataType. Must be: routine, gamification, or usage' },
+        { error: 'Invalid dataType. Must be: routine, gamification, usage, or pet' },
         { status: 400 }
       );
     }

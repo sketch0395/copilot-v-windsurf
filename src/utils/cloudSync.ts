@@ -1,12 +1,15 @@
 import { type RoutineBlock } from '@/components/ADHDRoutineTracker';
 import { type GamificationData } from '@/utils/gamification';
 
+import { type PetState } from '@/utils/pet';
+
 export interface UserData {
   routine?: RoutineBlock[];
   gamification?: GamificationData;
   usage?: {
     activeDays: string[];
   };
+  pet?: PetState;
   lastSynced?: string;
 }
 
@@ -19,7 +22,7 @@ function getAuthToken(): string | null {
 }
 
 // Save data to backend API
-export async function saveToCloud(dataType: 'routine' | 'gamification' | 'usage', data: unknown) {
+export async function saveToCloud(dataType: 'routine' | 'gamification' | 'usage' | 'pet', data: unknown) {
   try {
     const token = getAuthToken();
     if (!token) {
@@ -48,7 +51,7 @@ export async function saveToCloud(dataType: 'routine' | 'gamification' | 'usage'
 }
 
 // Load data from backend API
-export async function loadFromCloud(dataType: 'routine' | 'gamification' | 'usage') {
+export async function loadFromCloud(dataType: 'routine' | 'gamification' | 'usage' | 'pet') {
   try {
     const token = getAuthToken();
     if (!token) {
@@ -82,7 +85,8 @@ export async function syncAllData(data: UserData) {
   const results = {
     routine: false,
     gamification: false,
-    usage: false
+    usage: false,
+    pet: false
   };
 
   if (data.routine) {
@@ -93,6 +97,9 @@ export async function syncAllData(data: UserData) {
   }
   if (data.usage) {
     results.usage = await saveToCloud('usage', data.usage);
+  }
+  if (data.pet) {
+    results.pet = await saveToCloud('pet', data.pet);
   }
 
   return results;
@@ -121,7 +128,8 @@ export async function loadAllData(): Promise<UserData> {
     return {
       routine: allData.routine?.data,
       gamification: allData.gamification?.data,
-      usage: allData.usage?.data
+      usage: allData.usage?.data,
+      pet: allData.pet?.data
     };
   } catch (error) {
     console.error('Failed to load all data:', error);
@@ -137,7 +145,7 @@ export async function saveWithSync(
 ) {
   if (isAuthenticated) {
     // Save to cloud via API
-    return await saveToCloud(key as 'routine' | 'gamification' | 'usage', data);
+    return await saveToCloud(key as 'routine' | 'gamification' | 'usage' | 'pet', data);
   } else {
     // Save locally
     try {
@@ -158,7 +166,7 @@ export async function loadWithSync(
 ) {
   if (isAuthenticated) {
     // Load from cloud via API
-    const cloudData = await loadFromCloud(key as 'routine' | 'gamification' | 'usage');
+    const cloudData = await loadFromCloud(key as 'routine' | 'gamification' | 'usage' | 'pet');
     return cloudData !== null ? cloudData : defaultValue;
   } else {
     // Load locally

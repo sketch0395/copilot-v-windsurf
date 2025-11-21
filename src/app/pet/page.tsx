@@ -51,7 +51,17 @@ export default function PetPage() {
     const interval = setInterval(() => {
       const updatedPet = updatePetStats(pet);
       const leveledPet = levelUpPet(updatedPet, userLevel);
-      savePet(leveledPet);
+      
+      // Only save if stats actually changed to avoid unnecessary saves
+      if (
+        updatedPet.health !== pet.health ||
+        updatedPet.happiness !== pet.happiness ||
+        updatedPet.hunger !== pet.hunger ||
+        updatedPet.energy !== pet.energy ||
+        leveledPet.level !== pet.level
+      ) {
+        savePet(leveledPet);
+      }
     }, 60000); // Every minute
 
     return () => clearInterval(interval);
@@ -98,8 +108,7 @@ export default function PetPage() {
 
   const handleRelease = () => {
     if (confirm(`Are you sure you want to release ${pet?.name}? This cannot be undone!`)) {
-      localStorage.removeItem('adhd-tracker-pet');
-      savePet(null as any); // Clear pet data
+      savePet(null); // Clear pet data both locally and in cloud
     }
   };
 

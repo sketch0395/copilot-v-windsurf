@@ -7,9 +7,9 @@ import ProgressIndicators from './ProgressIndicators';
 import GamificationWidget, { AchievementsModal } from './GamificationWidget';
 import PointsNotification from './PointsNotification';
 import { useUsageSync } from '@/hooks/useUsageSync';
+import { useRoutineSync } from '@/hooks/useRoutineSync';
 import { recordBlockCompletion } from '@/utils/gamification';
 import { useAuth } from '@/contexts/AuthContext';
-import { loadWithSync, saveWithSync } from '@/utils/cloudSync';
 
 export interface RoutineBlock {
   id: string;
@@ -91,34 +91,9 @@ export default function ADHDRoutineTracker() {
   const { isAuthenticated } = useAuth();
   useUsageSync(); // Record usage with cloud sync
   
-  const [routine, setRoutine] = useState<RoutineBlock[]>(defaultRoutine);
+  const { routine, saveRoutine, isLoading } = useRoutineSync(defaultRoutine);
   const [isTimerActive, setIsTimerActive] = useState(false);
   const [showAchievements, setShowAchievements] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Load routine on mount
-  useEffect(() => {
-    async function loadRoutine() {
-      try {
-        const savedRoutine = await loadWithSync(isAuthenticated, 'routine', null);
-        if (savedRoutine) {
-          setRoutine(savedRoutine as RoutineBlock[]);
-        }
-      } catch (error) {
-        console.error('Failed to load routine:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    loadRoutine();
-  }, [isAuthenticated]);
-
-  useEffect(() => {
-    // Save routine to localStorage or cloud whenever it changes
-    if (!isLoading) {
-      saveWithSync(isAuthenticated, 'routine', routine);
-    }
-  }, [routine, isAuthenticated, isLoading]);
 
   // Calculate current block using useMemo to avoid cascading renders
   const currentBlock = useMemo(() => {
@@ -157,13 +132,14 @@ export default function ADHDRoutineTracker() {
       }
     }
     
-    setRoutine(prev => prev.map(block => 
+    const updatedRoutine = routine.map(block => 
       block.id === id ? { ...block, completed: !block.completed } : block
-    ));
+    );
+    saveRoutine(updatedRoutine);
   };
 
   const updateRoutine = (newRoutine: RoutineBlock[]) => {
-    setRoutine(newRoutine);
+    saveRoutine(newRoutine);
   };
 
   return (
