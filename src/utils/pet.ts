@@ -1,6 +1,6 @@
 export interface PetState {
   name: string;
-  type: 'cat' | 'dog' | 'dragon' | 'robot' | 'plant';
+  type: 'cat' | 'dog' | 'dragon' | 'robot' | 'plant' | 'mecha';
   level: number;
   happiness: number; // 0-100
   health: number; // 0-100
@@ -24,7 +24,8 @@ const PET_TYPES = {
   dog: { emoji: '🐶', name: 'Dog', unlockLevel: 5 },
   dragon: { emoji: '🐉', name: 'Dragon', unlockLevel: 10 },
   robot: { emoji: '🤖', name: 'Robot', unlockLevel: 15 },
-  plant: { emoji: '🌱', name: 'Plant', unlockLevel: 20 }
+  plant: { emoji: '🌱', name: 'Plant', unlockLevel: 20 },
+  mecha: { emoji: '🦾', name: 'Mecha', unlockLevel: 25 }
 };
 
 const DECAY_RATE = {

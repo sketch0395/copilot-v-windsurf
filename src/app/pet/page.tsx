@@ -32,6 +32,7 @@ export default function PetPage() {
     play: false,
     rest: false
   });
+  const [feedbackMessage, setFeedbackMessage] = useState('');
 
   useEffect(() => {
     if (!user) {
@@ -43,6 +44,39 @@ export default function PetPage() {
     const gamificationData = loadGamificationData();
     setUserLevel(gamificationData.level);
   }, [user, router]);
+
+  // Check and set cooldowns based on pet's last action times
+  useEffect(() => {
+    if (!pet) return;
+
+    const now = Date.now();
+    const hoursSinceLastFed = (now - pet.lastFed) / (1000 * 60 * 60);
+    const hoursSinceLastPlayed = (now - pet.lastPlayed) / (1000 * 60 * 60);
+    const hoursSinceLastSlept = (now - pet.lastSlept) / (1000 * 60 * 60);
+
+    // Set cooldown states based on actual time
+    const newCooldowns = {
+      feed: hoursSinceLastFed < 1,
+      play: hoursSinceLastPlayed < 2,
+      rest: hoursSinceLastSlept < 4
+    };
+
+    setCooldowns(newCooldowns);
+
+    // Set timers to clear cooldowns when they expire
+    if (newCooldowns.feed) {
+      const timeLeft = (1 - hoursSinceLastFed) * 3600000;
+      setTimeout(() => setCooldowns(prev => ({ ...prev, feed: false })), timeLeft);
+    }
+    if (newCooldowns.play) {
+      const timeLeft = (2 - hoursSinceLastPlayed) * 3600000;
+      setTimeout(() => setCooldowns(prev => ({ ...prev, play: false })), timeLeft);
+    }
+    if (newCooldowns.rest) {
+      const timeLeft = (4 - hoursSinceLastSlept) * 3600000;
+      setTimeout(() => setCooldowns(prev => ({ ...prev, rest: false })), timeLeft);
+    }
+  }, [pet]);
 
   // Auto-update pet stats every minute
   useEffect(() => {
@@ -77,32 +111,53 @@ export default function PetPage() {
   };
 
   const handleFeed = () => {
-    if (!pet || cooldowns.feed) return;
+    if (!pet) return;
+    if (cooldowns.feed) {
+      setFeedbackMessage('⏱️ You can feed again in a bit!');
+      setTimeout(() => setFeedbackMessage(''), 2000);
+      return;
+    }
     const updatedPet = feedPet(pet);
     if (updatedPet.lastFed !== pet.lastFed) {
       savePet(updatedPet);
       setCooldowns({ ...cooldowns, feed: true });
       setTimeout(() => setCooldowns(prev => ({ ...prev, feed: false })), 3600000); // 1 hour
+      setFeedbackMessage('🍖 Nom nom! Your pet enjoyed the meal!');
+      setTimeout(() => setFeedbackMessage(''), 2000);
     }
   };
 
   const handlePlay = () => {
-    if (!pet || cooldowns.play) return;
+    if (!pet) return;
+    if (cooldowns.play) {
+      setFeedbackMessage('⏱️ Your pet needs a break before playing again!');
+      setTimeout(() => setFeedbackMessage(''), 2000);
+      return;
+    }
     const updatedPet = playWithPet(pet);
     if (updatedPet.lastPlayed !== pet.lastPlayed) {
       savePet(updatedPet);
       setCooldowns({ ...cooldowns, play: true });
       setTimeout(() => setCooldowns(prev => ({ ...prev, play: false })), 7200000); // 2 hours
+      setFeedbackMessage('🎾 Woohoo! Your pet had fun playing!');
+      setTimeout(() => setFeedbackMessage(''), 2000);
     }
   };
 
   const handleRest = () => {
-    if (!pet || cooldowns.rest) return;
+    if (!pet) return;
+    if (cooldowns.rest) {
+      setFeedbackMessage('⏱️ Your pet is not tired yet!');
+      setTimeout(() => setFeedbackMessage(''), 2000);
+      return;
+    }
     const updatedPet = restPet(pet);
     if (updatedPet.lastSlept !== pet.lastSlept) {
       savePet(updatedPet);
       setCooldowns({ ...cooldowns, rest: true });
       setTimeout(() => setCooldowns(prev => ({ ...prev, rest: false })), 14400000); // 4 hours
+      setFeedbackMessage('💤 Zzz... Your pet is well-rested!');
+      setTimeout(() => setFeedbackMessage(''), 2000);
     }
   };
 
@@ -116,6 +171,23 @@ export default function PetPage() {
     if (value >= 70) return 'bg-green-500';
     if (value >= 40) return 'bg-yellow-500';
     return 'bg-red-500';
+  };
+
+  const getCooldownTime = (lastActionTime: number, cooldownHours: number) => {
+    if (!pet) return '';
+    const now = Date.now();
+    const hoursSince = (now - lastActionTime) / (1000 * 60 * 60);
+    if (hoursSince >= cooldownHours) return '';
+    
+    const hoursLeft = cooldownHours - hoursSince;
+    const minutesLeft = Math.ceil(hoursLeft * 60);
+    
+    if (minutesLeft > 60) {
+      const hours = Math.floor(minutesLeft / 60);
+      const mins = minutesLeft % 60;
+      return `${hours}h ${mins}m`;
+    }
+    return `${minutesLeft}m`;
   };
 
   const unlockedPets = getUnlockedPets(userLevel);
@@ -169,6 +241,13 @@ export default function PetPage() {
           <div className="space-y-6">
             {/* Pet Display */}
             <div className="bg-white dark:bg-gray-800 rounded-xl p-8 shadow-lg">
+              {/* Feedback Message */}
+              {feedbackMessage && (
+                <div className="mb-4 p-3 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded-lg text-center font-medium animate-pulse">
+                  {feedbackMessage}
+                </div>
+              )}
+              
               <div className="flex items-start justify-between mb-6">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-1">
@@ -188,8 +267,33 @@ export default function PetPage() {
 
               {/* Pet Avatar */}
               <div className="text-center mb-6">
-                <div className="text-9xl mb-4 animate-bounce">
-                  {PET_TYPES[pet.type].emoji}
+                <div 
+                  className={`inline-block mb-4 transition-all duration-500 ${
+                    pet.level > 5 ? 'scale-125' : pet.level > 3 ? 'scale-110' : 'scale-100'
+                  }`}
+                  style={{
+                    filter: pet.level > 5 ? 'drop-shadow(0 0 20px rgba(255, 215, 0, 0.6))' : 
+                            pet.level > 3 ? 'drop-shadow(0 0 15px rgba(147, 51, 234, 0.5))' : 
+                            'none'
+                  }}
+                >
+                  <div className="relative">
+                    <div className={`text-9xl ${pet.level > 1 ? 'animate-bounce' : ''}`}>
+                      {PET_TYPES[pet.type].emoji}
+                    </div>
+                    {/* Level badge */}
+                    <div className="absolute -top-2 -right-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs font-bold rounded-full w-8 h-8 flex items-center justify-center border-2 border-white dark:border-gray-800 shadow-lg">
+                      {pet.level}
+                    </div>
+                    {/* Sparkle effect for high-level pets */}
+                    {pet.level > 3 && (
+                      <>
+                        <span className="absolute top-0 left-0 text-2xl animate-ping">✨</span>
+                        <span className="absolute top-0 right-0 text-2xl animate-ping" style={{ animationDelay: '0.5s' }}>✨</span>
+                        <span className="absolute bottom-0 left-1/2 text-2xl animate-ping" style={{ animationDelay: '1s' }}>✨</span>
+                      </>
+                    )}
+                  </div>
                 </div>
                 <p className="text-gray-600 dark:text-gray-400 italic">
                   {mood?.message}
@@ -270,8 +374,10 @@ export default function PetPage() {
                   <span className="text-sm font-medium text-gray-800 dark:text-white">
                     Feed
                   </span>
-                  {cooldowns.feed && (
-                    <span className="text-xs text-gray-500">1h cooldown</span>
+                  {cooldowns.feed && pet && (
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      {getCooldownTime(pet.lastFed, 1)}
+                    </span>
                   )}
                 </button>
 
@@ -284,8 +390,10 @@ export default function PetPage() {
                   <span className="text-sm font-medium text-gray-800 dark:text-white">
                     Play
                   </span>
-                  {cooldowns.play && (
-                    <span className="text-xs text-gray-500">2h cooldown</span>
+                  {cooldowns.play && pet && (
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      {getCooldownTime(pet.lastPlayed, 2)}
+                    </span>
                   )}
                 </button>
 
@@ -298,8 +406,10 @@ export default function PetPage() {
                   <span className="text-sm font-medium text-gray-800 dark:text-white">
                     Rest
                   </span>
-                  {cooldowns.rest && (
-                    <span className="text-xs text-gray-500">4h cooldown</span>
+                  {cooldowns.rest && pet && (
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      {getCooldownTime(pet.lastSlept, 4)}
+                    </span>
                   )}
                 </button>
               </div>
