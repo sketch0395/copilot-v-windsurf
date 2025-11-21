@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  focus-zone:
+    image: focus-zone:latest
+    container_name: focus-zone-app
+    restart: unless-stopped
+    ports:
+      - "4001:4001"
+    environment:
+      - NODE_ENV=production
+      - JWT_SECRET=${JWT_SECRET:-change-this-secret-in-production}
+    volumes:
+      - ./data:/app/data
+    networks:
+      - focus-zone-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:4001/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  focus-zone-network:
+    driver: bridge
+
+volumes:
+  focus-zone-data:
+    driver: local

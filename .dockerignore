@@ -1,0 +1,7 @@
+# Ignore Docker files in development
+Dockerfile
+docker-compose.yml
+deploy.sh
+deploy.bat
+deploy-remote.sh
+*.tar

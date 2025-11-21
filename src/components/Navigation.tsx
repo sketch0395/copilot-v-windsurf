@@ -4,12 +4,16 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTheme, themes, type Theme } from '@/contexts/ThemeContext';
+import { useAuth } from '@/contexts/AuthContext';
+import AuthModal from './AuthModal';
 
 export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
+  const { user, logout } = useAuth();
 
   const navLinks = [
     { href: '/', label: 'Focus Tracker', icon: '🎯' },
@@ -19,7 +23,8 @@ export default function Navigation() {
   const isActive = (path: string) => pathname === path;
 
   return (
-    <nav className="sticky top-0 z-40 backdrop-blur-md bg-white/80 dark:bg-gray-900/80 border-b border-gray-200 dark:border-gray-700 shadow-sm">
+    <>
+      <nav className="sticky top-0 z-40 backdrop-blur-md bg-white/80 dark:bg-gray-900/80 border-b border-gray-200 dark:border-gray-700 shadow-sm">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo/Brand */}
@@ -49,6 +54,30 @@ export default function Navigation() {
                 <span>{link.label}</span>
               </Link>
             ))}
+            
+            {/* Auth Button Desktop */}
+            {user ? (
+              <div className="flex items-center space-x-2">
+                <span className="px-3 py-2 text-sm text-gray-700 dark:text-gray-300">
+                  👋 {user.displayName || user.email}
+                </span>
+                <button
+                  onClick={logout}
+                  className="flex items-center space-x-2 px-4 py-2 rounded-lg font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all"
+                >
+                  <span>🚪</span>
+                  <span>Logout</span>
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setIsAuthModalOpen(true)}
+                className="flex items-center space-x-2 px-4 py-2 rounded-lg font-medium bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:from-blue-600 hover:to-purple-600 transition-all"
+              >
+                <span>🔐</span>
+                <span>Sign In</span>
+              </button>
+            )}
             
             {/* Theme Switcher Desktop */}
             <div className="relative">
@@ -132,6 +161,38 @@ export default function Navigation() {
               </Link>
             ))}
             
+            {/* Auth Section Mobile */}
+            <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+              {user ? (
+                <>
+                  <div className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">
+                    👋 {user.displayName || user.email}
+                  </div>
+                  <button
+                    onClick={() => {
+                      logout();
+                      setIsMenuOpen(false);
+                    }}
+                    className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all"
+                  >
+                    <span className="text-xl">🚪</span>
+                    <span>Logout</span>
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => {
+                    setIsAuthModalOpen(true);
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg font-medium bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:from-blue-600 hover:to-purple-600 transition-all"
+                >
+                  <span className="text-xl">🔐</span>
+                  <span>Sign In</span>
+                </button>
+              )}
+            </div>
+            
             {/* Theme Switcher Mobile */}
             <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
               <p className="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">
@@ -161,5 +222,9 @@ export default function Navigation() {
         )}
       </div>
     </nav>
+      
+    {/* Auth Modal - Rendered outside nav to avoid z-index issues */}
+    <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+    </>
   );
 }

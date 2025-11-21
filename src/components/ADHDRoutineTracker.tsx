@@ -8,6 +8,8 @@ import GamificationWidget, { AchievementsModal } from './GamificationWidget';
 import PointsNotification from './PointsNotification';
 import { recordDailyUsage } from '@/utils/usageTracking';
 import { recordBlockCompletion } from '@/utils/gamification';
+import { useAuth } from '@/contexts/AuthContext';
+import { loadWithSync, saveWithSync } from '@/utils/cloudSync';
 
 export interface RoutineBlock {
   id: string;
@@ -86,17 +88,29 @@ const defaultRoutine: RoutineBlock[] = [
 ];
 
 export default function ADHDRoutineTracker() {
-  const [routine, setRoutine] = useState<RoutineBlock[]>(() => {
-    // Load routine from localStorage on component mount
-    const savedRoutine = localStorage.getItem('adhd-routine');
-    if (savedRoutine) {
-      return JSON.parse(savedRoutine);
-    }
-    return defaultRoutine;
-  });
+  const { isAuthenticated } = useAuth();
   
+  const [routine, setRoutine] = useState<RoutineBlock[]>(defaultRoutine);
   const [isTimerActive, setIsTimerActive] = useState(false);
   const [showAchievements, setShowAchievements] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load routine on mount
+  useEffect(() => {
+    async function loadRoutine() {
+      try {
+        const savedRoutine = await loadWithSync(isAuthenticated, 'routine', null);
+        if (savedRoutine) {
+          setRoutine(savedRoutine as RoutineBlock[]);
+        }
+      } catch (error) {
+        console.error('Failed to load routine:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadRoutine();
+  }, [isAuthenticated]);
 
   useEffect(() => {
     // Record daily usage when component mounts
@@ -104,9 +118,11 @@ export default function ADHDRoutineTracker() {
   }, []);
 
   useEffect(() => {
-    // Save routine to localStorage whenever it changes
-    localStorage.setItem('adhd-routine', JSON.stringify(routine));
-  }, [routine]);
+    // Save routine to localStorage or cloud whenever it changes
+    if (!isLoading) {
+      saveWithSync(isAuthenticated, 'routine', routine);
+    }
+  }, [routine, isAuthenticated, isLoading]);
 
   // Calculate current block using useMemo to avoid cascading renders
   const currentBlock = useMemo(() => {
