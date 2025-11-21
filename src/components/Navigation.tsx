@@ -15,7 +15,8 @@ export default function Navigation() {
 
   const navLinks = [
     { href: '/', label: 'Focus Tracker', icon: '🎯' },
-    { href: '/calendar', label: 'Calendar', icon: '📅' }
+    { href: '/calendar', label: 'Calendar', icon: '📅' },
+    { href: '/pet', label: 'Pet', icon: '🐾' }
   ];
 
   const isActive = (path: string) => pathname === path;
