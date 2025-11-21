@@ -25,6 +25,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     // Save theme to localStorage and apply to document
     localStorage.setItem('adhd-tracker-theme', theme);
     document.documentElement.setAttribute('data-theme', theme);
+    
+    // Apply or remove dark class for Tailwind dark mode
+    if (theme === 'dark' || theme === 'ocean' || theme === 'sunset' || theme === 'forest' || theme === 'neon') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
   }, [theme]);
 
   const setTheme = (newTheme: Theme) => {

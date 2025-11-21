@@ -3,16 +3,14 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useTheme, themes, type Theme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import AuthModal from './AuthModal';
+import UserMenu from './UserMenu';
 
 export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const pathname = usePathname();
-  const { theme, setTheme } = useTheme();
   const { user, logout } = useAuth();
 
   const navLinks = [
@@ -55,20 +53,9 @@ export default function Navigation() {
               </Link>
             ))}
             
-            {/* Auth Button Desktop */}
+            {/* User Menu or Sign In Button */}
             {user ? (
-              <div className="flex items-center space-x-2">
-                <span className="px-3 py-2 text-sm text-gray-700 dark:text-gray-300">
-                  👋 {user.displayName || user.email}
-                </span>
-                <button
-                  onClick={logout}
-                  className="flex items-center space-x-2 px-4 py-2 rounded-lg font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all"
-                >
-                  <span>🚪</span>
-                  <span>Logout</span>
-                </button>
-              </div>
+              <UserMenu />
             ) : (
               <button
                 onClick={() => setIsAuthModalOpen(true)}
@@ -78,38 +65,7 @@ export default function Navigation() {
                 <span>Sign In</span>
               </button>
             )}
-            
-            {/* Theme Switcher Desktop */}
-            <div className="relative">
-              <button
-                onClick={() => setIsThemeMenuOpen(!isThemeMenuOpen)}
-                className="flex items-center space-x-2 px-4 py-2 rounded-lg font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all"
-              >
-                <span>{themes[theme].icon}</span>
-                <span className="hidden lg:inline">{themes[theme].name}</span>
-              </button>
-              
-              {isThemeMenuOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-                  {(Object.entries(themes) as [Theme, typeof themes[Theme]][]).map(([key, value]) => (
-                    <button
-                      key={key}
-                      onClick={() => {
-                        setTheme(key);
-                        setIsThemeMenuOpen(false);
-                      }}
-                      className={`w-full flex items-center space-x-3 px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
-                        theme === key ? 'bg-purple-50 dark:bg-purple-900/30' : ''
-                      }`}
-                    >
-                      <span className="text-xl">{value.icon}</span>
-                      <span className="text-sm font-medium">{value.name}</span>
-                      {theme === key && <span className="ml-auto text-purple-500">✓</span>}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+
           </div>
 
           {/* Mobile Menu Button */}
@@ -161,25 +117,33 @@ export default function Navigation() {
               </Link>
             ))}
             
-            {/* Auth Section Mobile */}
-            <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
-              {user ? (
-                <>
-                  <div className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">
-                    👋 {user.displayName || user.email}
-                  </div>
-                  <button
-                    onClick={() => {
-                      logout();
-                      setIsMenuOpen(false);
-                    }}
-                    className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all"
-                  >
-                    <span className="text-xl">🚪</span>
-                    <span>Logout</span>
-                  </button>
-                </>
-              ) : (
+            {/* User Menu Mobile */}
+            {user && (
+              <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                <Link
+                  href="/settings"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="flex items-center space-x-3 px-4 py-3 rounded-lg font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all"
+                >
+                  <span className="text-xl">⚙️</span>
+                  <span>Settings</span>
+                </Link>
+                <button
+                  onClick={() => {
+                    logout();
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
+                >
+                  <span className="text-xl">🚪</span>
+                  <span>Logout</span>
+                </button>
+              </div>
+            )}
+            
+            {/* Sign In Mobile */}
+            {!user && (
+              <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
                 <button
                   onClick={() => {
                     setIsAuthModalOpen(true);
@@ -190,34 +154,8 @@ export default function Navigation() {
                   <span className="text-xl">🔐</span>
                   <span>Sign In</span>
                 </button>
-              )}
-            </div>
-            
-            {/* Theme Switcher Mobile */}
-            <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
-              <p className="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">
-                Choose Theme
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                {(Object.entries(themes) as [Theme, typeof themes[Theme]][]).map(([key, value]) => (
-                  <button
-                    key={key}
-                    onClick={() => {
-                      setTheme(key);
-                      setIsMenuOpen(false);
-                    }}
-                    className={`flex items-center justify-center space-x-2 p-3 rounded-lg transition-all ${
-                      theme === key
-                        ? 'bg-purple-500 text-white shadow-md'
-                        : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-                    }`}
-                  >
-                    <span className="text-lg">{value.icon}</span>
-                    <span className="text-sm font-medium">{value.name.split(' ')[0]}</span>
-                  </button>
-                ))}
               </div>
-            </div>
+            )}
           </div>
         )}
       </div>

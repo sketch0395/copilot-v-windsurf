@@ -18,7 +18,7 @@ export default function Home() {
   const quote = mounted ? getRandomQuote() : { text: '', author: '' };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen">
       <div className="container mx-auto px-4 py-6 sm:py-8">
         {/* Header with Quote */}
         <header className="text-center mb-6 sm:mb-8">

@@ -35,8 +35,8 @@ export default function CalendarPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
-      <div className="container mx-auto px-4 py-6 sm:py-8">
+    <div className="min-h-screen">
+      <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <header className="text-center mb-6 sm:mb-8">
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-800 dark:text-white mb-2 sm:mb-3">

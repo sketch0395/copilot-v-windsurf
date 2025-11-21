@@ -81,6 +81,11 @@ export const statements = {
     WHERE email = ?
   `),
 
+  deleteUser: db.prepare(`
+    DELETE FROM users
+    WHERE id = ?
+  `),
+
   // User data operations
   saveUserData: db.prepare(`
     INSERT INTO user_data (user_id, data_type, data, last_synced)

@@ -5,15 +5,41 @@
   --foreground: #171717;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Theme-specific CSS variables */
+[data-theme="light"] {
+  --bg-from: 249 250 251;
+  --bg-to: 243 244 246;
+}
+
+[data-theme="dark"] {
+  --bg-from: 17 24 39;
+  --bg-to: 31 41 55;
+}
+
+[data-theme="ocean"] {
+  --bg-from: 59 130 246;
+  --bg-to: 20 184 166;
+}
+
+[data-theme="sunset"] {
+  --bg-from: 251 146 60;
+  --bg-to: 168 85 247;
+}
+
+[data-theme="forest"] {
+  --bg-from: 22 163 74;
+  --bg-to: 15 118 110;
+}
+
+[data-theme="neon"] {
+  --bg-from: 88 28 135;
+  --bg-to: 88 28 135;
 }
 
 body {
-  background: var(--background);
+  background: rgb(var(--bg-from));
+  background: linear-gradient(to bottom right, rgb(var(--bg-from)), rgb(var(--bg-to)));
+  min-height: 100vh;
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
