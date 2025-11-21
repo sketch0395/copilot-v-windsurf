@@ -16,10 +16,8 @@ export async function DELETE(request: NextRequest) {
     const token = authHeader.substring(7);
     
     // Verify token
-    let payload;
-    try {
-      payload = verifyToken(token);
-    } catch (error) {
+    const payload = verifyToken(token);
+    if (!payload) {
       return NextResponse.json(
         { error: 'Invalid or expired token' },
         { status: 401 }
